@@ -1,16 +1,20 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Upload, X } from "lucide-react";
 
-const PredictPage = () => {
-  const [prediction, setPrediction] = useState("");
-  const [imagePreview, setImagePreview] = useState("");
-  const [imagePath, setImagePath] = useState("");
-  const [showModal, setShowModal] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+interface PredictionResponse {
+  prediction: string;
+  image_path: string;
+}
 
-  const getPredictionStyle = (prediction) => {
-    const lowerPrediction = prediction.toLowerCase();
+const PredictPage = () => {
+  const [prediction, setPrediction] = useState<string>("");
+  const [imagePreview, setImagePreview] = useState<string>("");
+  const [showModal, setShowModal] = useState<boolean>(false);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  const getPredictionStyle = (predictionText: string): string => {
+    const lowerPrediction = predictionText.toLowerCase();
     if (lowerPrediction.includes('fresh')) {
       return "bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200";
     } else if (lowerPrediction.includes('rotten') || lowerPrediction.includes('spoiled')) {
@@ -19,8 +23,8 @@ const PredictPage = () => {
     return "bg-gradient-to-r from-blue-50 to-indigo-50";
   };
 
-  const getPredictionTextStyle = (prediction) => {
-    const lowerPrediction = prediction.toLowerCase();
+  const getPredictionTextStyle = (predictionText: string): string => {
+    const lowerPrediction = predictionText.toLowerCase();
     if (lowerPrediction.includes('fresh')) {
       return "text-green-700";
     } else if (lowerPrediction.includes('rotten') || lowerPrediction.includes('spoiled')) {
@@ -29,30 +33,35 @@ const PredictPage = () => {
     return "text-gray-800";
   };
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     if (file) {
       processFile(file);
     }
   };
 
-  const processFile = (file) => {
+  const processFile = (file: File) => {
     const reader = new FileReader();
-    reader.onload = () => setImagePreview(reader.result);
+    reader.onload = () => {
+      const result = reader.result;
+      if (typeof result === 'string') {
+        setImagePreview(result);
+      }
+    };
     reader.readAsDataURL(file);
   };
 
-  const handleDragOver = (e) => {
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(true);
   };
 
-  const handleDragLeave = (e) => {
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(false);
   };
 
-  const handleDrop = (e) => {
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(false);
     const file = e.dataTransfer.files[0];
@@ -61,7 +70,7 @@ const PredictPage = () => {
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!imagePreview) {
       alert("Please select an image to upload.");
@@ -69,9 +78,13 @@ const PredictPage = () => {
     }
 
     setIsLoading(true);
-    const fileInput = e.target.elements.foto;
+    const form = e.currentTarget;
+    const fileInput = form.elements.namedItem('foto') as HTMLInputElement;
     const formData = new FormData();
-    formData.append("foto", fileInput.files[0]);
+    
+    if (fileInput.files?.[0]) {
+      formData.append("foto", fileInput.files[0]);
+    }
 
     try {
       const response = await fetch(
@@ -88,9 +101,8 @@ const PredictPage = () => {
         return;
       }
 
-      const data = await response.json();
+      const data: PredictionResponse = await response.json();
       setPrediction(data.prediction);
-      setImagePath(data.image_path);
       setShowModal(true);
     } catch (error) {
       console.error("Error:", error);
