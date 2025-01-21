@@ -75,7 +75,7 @@ const PredictPage = () => {
 
     try {
       const response = await fetch(
-        import.meta.env.API,
+        import.meta.env.VITE_API,
         {
           method: "POST",
           body: formData,
