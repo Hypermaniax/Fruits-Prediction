@@ -75,7 +75,7 @@ const PredictPage = () => {
 
     try {
       const response = await fetch(
-        "https://web-production-8985.up.railway.app/predict",
+        import.meta.env.API,
         {
           method: "POST",
           body: formData,
